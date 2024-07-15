@@ -3,7 +3,7 @@ import { Column, Table, AutoSizer } from "react-virtualized";
 import "react-virtualized/styles.css";
 import "./TableView.css";
 
-const TableView = ({ data }) => {
+const TableView = ({ data, str }) => {
   if (!data || data.length === 0) {
     return null;
   }
@@ -12,7 +12,7 @@ const TableView = ({ data }) => {
 
   return (
     <div className="my-3">
-      <h4>Table Data:</h4>
+      <h4>Table Data [{str}]:</h4>
       <div
         style={{ height: "400px", width: "100%" }}
         className="virtualizedTable"

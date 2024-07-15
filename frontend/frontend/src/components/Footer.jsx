@@ -2,13 +2,13 @@ import React from "react";
 
 const Footer = () => {
   return (
-    <footer>
-      <footer className="footer bg-primary text-white text-center py-3 fixed-bottom">
+    <div className="mt-3">
+      <footer className="footer fixed-bottom bg-primary text-white text-center py-2">
         <div className="container">
           <p className="mb-0">© 2024 CSV Patter Tool. All rights reserved.</p>
         </div>
       </footer>
-    </footer>
+    </div>
   );
 };
 

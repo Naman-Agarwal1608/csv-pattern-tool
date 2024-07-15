@@ -4,7 +4,7 @@ const Header = () => {
   return (
     <header>
       <nav
-        className="navbar navbar-expand-lg sticky-top bg-primary"
+        className="navbar navbar-expand-lg fixed-top bg-primary"
         data-bs-theme="dark"
       >
         <div className="container-fluid">
@@ -13,6 +13,7 @@ const Header = () => {
           </a>
         </div>
       </nav>
+      <br />
     </header>
   );
 };

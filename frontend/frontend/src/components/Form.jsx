@@ -3,13 +3,17 @@ import { useState } from "react";
 import Loading from "./Loading";
 import ErrorAlert from "./ErrorAlert";
 import TableView from "./TableView";
+import PatternForm from "./PatternForm";
 
 const Form = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [pattern, setPattern] = useState("");
+  const [regex, setregex] = useState("");
+  const [replacement, setreplacement] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorAlert, setErrorAlert] = useState(null);
   const [fileData, setFileData] = useState([]);
+  const [showPatternForm, setShowPatternForm] = useState(false);
 
   const handleFileChange = (e) => {
     setSelectedFile(e.target.files[0]);
@@ -24,9 +28,12 @@ const Form = () => {
     setLoading(true);
     setFileData([]);
     setErrorAlert(null);
+    setShowPatternForm(false);
     const formData = new FormData();
     formData.append("file", selectedFile);
-    formData.append("pattern", pattern);
+
+    const formDataPattern = new FormData();
+    formDataPattern.append("pattern", pattern);
 
     try {
       const request = await fetch("http://localhost:8000/addCSV/", {
@@ -38,7 +45,24 @@ const Form = () => {
 
       if (response.data) {
         setFileData(response.data);
+        setPattern(pattern);
         setErrorAlert(null);
+        // So now we can process the pattern
+        const requestRegex = await fetch("http://localhost:8000/getregex/", {
+          method: "POST",
+          body: formDataPattern,
+        });
+
+        const responseRegex = await requestRegex.json();
+        if (responseRegex.regex) {
+          setregex(responseRegex.regex);
+          setreplacement(responseRegex.replacement);
+          setShowPatternForm(true);
+        } else {
+          setErrorAlert(responseRegex.error);
+          setregex("");
+          setreplacement("");
+        }
       } else {
         setErrorAlert(response.error);
         setFileData([]);
@@ -49,7 +73,6 @@ const Form = () => {
       setLoading(false);
     }
   };
-
   return (
     <div className="my-3">
       <form onSubmit={handleSubmit}>
@@ -68,14 +91,14 @@ const Form = () => {
         </div>
         <div className="mb-3">
           <label htmlFor="pattern" className="form-label">
-            Pattern in Natural Language
+            Instruction in Natural Language
           </label>
           <input
             type="text"
             className="form-control"
             id="pattern"
             onChange={handlePatternChange}
-            placeholder="e.g.: find email addresses"
+            placeholder="Format: Find <...Something...> and replace with <...Something...>"
             required
           />
         </div>
@@ -86,7 +109,10 @@ const Form = () => {
 
       {loading && <Loading />}
       {errorAlert && <ErrorAlert error={errorAlert} />}
-      {fileData.length > 0 && <TableView data={fileData} />}
+      {fileData.length > 0 && (
+        <TableView str={"Before Replacement"} data={fileData} />
+      )}
+      {showPatternForm && <PatternForm regex={regex} replace={replacement} />}
     </div>
   );
 };

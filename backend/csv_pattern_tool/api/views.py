@@ -1,6 +1,8 @@
+import re
 from django.http import JsonResponse
-from django.shortcuts import render
 import pandas as pd
+from .regexllm import RegexLLM
+# from backend.csv_pattern_tool.api import regexllm
 
 # Create your views here.
 
@@ -23,3 +25,20 @@ def addCSV(request):
             return JsonResponse({'error': str(e)})
     else:
         return JsonResponse({'error': 'Invalid request'})
+
+
+def getRegex(request):
+    if request.method == 'POST':
+        pattern = request.POST.get('pattern')
+
+        # if 'class_instance' not in request.session:
+        #     regexllm_instance = RegexLLM()
+        #     request.session['class_instance'] = RegexLLM()
+        #     request.session.modified = True
+
+        # else:
+        #     regexllm_instance = request.session['class_instance']
+        regexllm_instance = RegexLLM()
+
+        result = regexllm_instance.invokeLLM(pattern)
+        return JsonResponse(result, safe=False)
