@@ -12,7 +12,7 @@ const TableView = ({ data, str }) => {
 
   return (
     <div className="my-3">
-      <h4>Table Data [{str}]:</h4>
+      <h4 className="my-2">Table Data [{str}]:</h4>
       <div
         style={{ height: "400px", width: "100%" }}
         className="virtualizedTable"

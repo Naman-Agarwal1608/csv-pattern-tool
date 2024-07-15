@@ -14,6 +14,7 @@ const Form = () => {
   const [errorAlert, setErrorAlert] = useState(null);
   const [fileData, setFileData] = useState([]);
   const [showPatternForm, setShowPatternForm] = useState(false);
+  const [id, setID] = useState(null);
 
   const handleFileChange = (e) => {
     setSelectedFile(e.target.files[0]);
@@ -47,6 +48,7 @@ const Form = () => {
         setFileData(response.data);
         setPattern(pattern);
         setErrorAlert(null);
+        setID(response.id);
         // So now we can process the pattern
         const requestRegex = await fetch("http://localhost:8000/getregex/", {
           method: "POST",
@@ -112,7 +114,14 @@ const Form = () => {
       {fileData.length > 0 && (
         <TableView str={"Before Replacement"} data={fileData} />
       )}
-      {showPatternForm && <PatternForm regex={regex} replace={replacement} />}
+      {showPatternForm && (
+        <PatternForm
+          regex={regex}
+          replace={replacement}
+          pattern={pattern}
+          id={id}
+        />
+      )}
     </div>
   );
 };
