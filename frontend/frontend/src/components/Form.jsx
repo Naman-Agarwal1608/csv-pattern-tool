@@ -132,7 +132,7 @@ const Form = () => {
     }
   };
   return (
-    <div className="my-3">
+    <div className="container">
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
           <label htmlFor="csv" className="form-label">

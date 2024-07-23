@@ -1,43 +1,45 @@
-import React from "react";
-import { Column, Table, AutoSizer } from "react-virtualized";
-import "react-virtualized/styles.css";
-import "./TableView.css";
+import React, { useMemo } from "react";
+import { AgGridReact } from "ag-grid-react";
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-quartz.css";
 
 const TableView = ({ data, str }) => {
   if (!data || data.length === 0) {
     return null;
   }
 
-  const columns = Object.keys(data[0]);
+  const columns = useMemo(() => {
+    return Object.keys(data[0]).map((key) => ({
+      headerName: key.charAt(0).toUpperCase() + key.slice(1), // Capitalize header
+      field: key,
+      sortable: true,
+      filter: true,
+      resizable: true,
+    }));
+  }, [data]);
 
   return (
-    <div className="my-3">
-      <h4 className="my-2">Table Data [{str}]:</h4>
+    <div className="my-3" style={{ height: "500px", width: "100%" }}>
+      <h4 className="mb-2">Table Data [{str}]:</h4>
       <div
-        style={{ height: "400px", width: "100%" }}
-        className="virtualizedTable"
+        style={{ height: "90%", width: "100%" }}
+        //className="virtualizedTable"
+        className="ag-theme-quartz"
       >
-        <AutoSizer>
-          {({ height, width }) => (
-            <Table
-              width={width}
-              height={height}
-              headerHeight={40}
-              rowHeight={30}
-              rowCount={data.length}
-              rowGetter={({ index }) => data[index]}
-            >
-              {columns.map((key) => (
-                <Column
-                  key={key}
-                  label={key}
-                  dataKey={key}
-                  width={width / columns.length}
-                />
-              ))}
-            </Table>
-          )}
-        </AutoSizer>
+        <AgGridReact
+          columnDefs={columns}
+          rowData={data}
+          defaultColDef={{
+            sortable: true,
+            filter: true,
+            resizable: true,
+            flex: 1,
+          }}
+          domLayout="normal"
+          pagination={true}
+          paginationPageSize={15}
+          rowBuffer={10}
+        />
       </div>
     </div>
   );
