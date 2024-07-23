@@ -59,6 +59,7 @@ const PatternForm = ({ regex, replace, pattern, id }) => {
     e.preventDefault();
     setconfirmLoading(true);
     setErrorAlert(null);
+    setFileData([]);
     const formData = new FormData();
     formData.append("regex", finalregex);
     formData.append("replacement", replacement);
@@ -70,13 +71,34 @@ const PatternForm = ({ regex, replace, pattern, id }) => {
         body: formData,
       });
 
-      const response = await request.json();
-      if (response.data) {
-        setFileData(response.data);
-        setErrorAlert(null);
-      } else if (response.error) {
-        setErrorAlert("Error" + response.error);
-      }
+      const reader = request.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let result = "";
+      let temp = "";
+      let arr = [];
+
+      const readStream = async () => {
+        const { done, value } = await reader.read();
+        if (done) {
+          return;
+        }
+        //console.log(value);
+        result = decoder.decode(value, { stream: true });
+        temp = result.replaceAll("}][{", "}]||[{");
+        arr = temp.split("||");
+
+        let rows = [];
+        arr.forEach((element) => {
+          let parsed = JSON.parse(element);
+          rows.push(...parsed);
+        });
+
+        setFileData((oldData) => [...oldData, ...rows]);
+        // Clear result for next chunks accumulation
+        result = "";
+        return readStream();
+      };
+      await readStream();
     } catch (error) {
       setErrorAlert("Error: " + error);
     } finally {
@@ -113,10 +135,10 @@ const PatternForm = ({ regex, replace, pattern, id }) => {
           required
         />
 
-        <button type="button" class="btn btn-danger" onClick={handleRetry}>
+        <button type="button" className="btn btn-danger" onClick={handleRetry}>
           {loading && (
             <span
-              class="spinner-border spinner-border-sm"
+              className="spinner-border spinner-border-sm"
               aria-hidden="true"
             ></span>
           )}{" "}
@@ -124,13 +146,13 @@ const PatternForm = ({ regex, replace, pattern, id }) => {
         </button>
         <button
           type="button"
-          class="btn btn-success"
+          className="btn btn-success"
           onClick={handleConfirm}
           disabled={confirmButton}
         >
           {confirmloading && (
             <span
-              class="spinner-border spinner-border-sm"
+              className="spinner-border spinner-border-sm"
               aria-hidden="true"
             ></span>
           )}{" "}

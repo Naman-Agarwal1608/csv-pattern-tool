@@ -1,9 +1,12 @@
-from django.http import JsonResponse
+from django.http import JsonResponse, StreamingHttpResponse
 import pandas as pd
 from .regexllm import RegexLLM
 from .models import receivedFile
 import re
-# Create your views here.
+import json
+
+
+CHUNKSIZE = 100  # Number of rows in go
 
 
 def addCSV(request):
@@ -12,14 +15,34 @@ def addCSV(request):
 
         try:
 
+            chunks = []
+
             if file.name.endswith('.csv'):
-                df = pd.read_csv(file, low_memory=False)
+                reader = pd.read_csv(file, chunksize=CHUNKSIZE)
+                # df = pd.read_csv(file, low_memory=False)
             elif file.name.endswith('.xlsx') or file.name.endswith('.xls'):
-                df = pd.read_excel(file, low_memory=False)
+                reader = pd.read_excel(file, chunksize=CHUNKSIZE)
+                # df = pd.read_excel(file, low_memory=False)
             else:
                 return JsonResponse({'error': 'Invalid file format'})
             saveFile = receivedFile.objects.create(file=file)
-            return JsonResponse({'success': 'File received', 'data': df.to_dict(orient='records'), "id": saveFile.uuid})
+
+            def data_yielder():
+
+                for chunk in reader:
+                    chunks.append(chunk)
+                    yield chunk.to_json(orient='records')
+                yield json.dumps([{"uuid": str(saveFile.uuid)}])
+
+            # df = pd.concat(chunks)
+            response = StreamingHttpResponse(
+                data_yielder(), content_type='application/json')
+            # response['Content-Disposition'] = f'attachment; filename="{file.name}"'
+            # response['X-SaveFile-ID'] = saveFile.uuid
+
+            # return JsonResponse({'success': 'File received', 'data': df[0:5].to_dict(orient='records'), "id": saveFile.uuid})
+
+            return response
 
         except Exception as e:
             return JsonResponse({'error': str(e)})
@@ -50,20 +73,24 @@ def replace(request):
         regexStr = request.POST.get('regex')
         replacement = request.POST.get('replacement')
         file_id = request.POST.get('id')
-        print(regexStr, replacement, file_id)
         try:
             file = receivedFile.objects.get(uuid=file_id).file
             if file.name.endswith('.csv'):
-                df = pd.read_csv(file, low_memory=False)
+                reader = pd.read_csv(file, chunksize=CHUNKSIZE)
             elif file.name.endswith('.xlsx') or file.name.endswith('.xls'):
-                df = pd.read_excel(file, low_memory=False)
-            # df = df.replace(to_replace=r'{}'.format(regexStr),
-            #                 value=replacement, regex=True)
-            df = df.applymap(lambda x: re.sub(regexStr, replacement, str(x)))
-            print(df)
-            return JsonResponse({'success': 'Pattern replaced', 'data': df.to_dict(orient='records')})
+                reader = pd.read_excel(file, chunksize=CHUNKSIZE)
+
+            def regexReplace(reader):
+                for chunk in reader:
+                    tempChunk = chunk.map(
+                        lambda x: re.sub(regexStr, replacement, str(x)))
+                    yield tempChunk.to_json(orient='records')
+
+            response = StreamingHttpResponse(
+                regexReplace(reader), content_type='application/json')
+            # df = df.applymap(lambda x: re.sub(regexStr, replacement, str(x)))
+            return response
         except Exception as e:
-            print(e)
             return JsonResponse({'error': str(e)})
     else:
         return JsonResponse({'error': 'Invalid request'})

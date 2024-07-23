@@ -15,6 +15,8 @@ const Form = () => {
   const [fileData, setFileData] = useState([]);
   const [showPatternForm, setShowPatternForm] = useState(false);
   const [id, setID] = useState(null);
+  let flag = false;
+  let count = 0;
 
   const handleFileChange = (e) => {
     setSelectedFile(e.target.files[0]);
@@ -37,18 +39,72 @@ const Form = () => {
     formDataPattern.append("pattern", pattern);
 
     try {
-      const request = await fetch("http://localhost:8000/addCSV/", {
+      const uploadRequest = await fetch("http://localhost:8000/addCSV/", {
         method: "POST",
         body: formData,
       });
 
-      const response = await request.json();
+      const reader = uploadRequest.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let result = "";
+      let temp = "";
+      let arr = [];
 
-      if (response.data) {
-        setFileData(response.data);
+      const readStream = async () => {
+        const { done, value } = await reader.read();
+        if (done) {
+          return;
+        }
+        //console.log(value);
+        result = decoder.decode(value, { stream: true });
+        temp = result.replaceAll("}][{", "}]||[{");
+        arr = temp.split("||");
+
+        let rows = [];
+        try {
+          arr.forEach((element, index) => {
+            let parsed = "";
+            parsed = JSON.parse(element);
+
+            if (index === arr.length - 1) {
+              // Last element (chunk) of array can contain UUID
+              if (parsed[parsed.length - 1].uuid) {
+                setID(parsed[parsed.length - 1].uuid);
+                //console.log("UUID: " + "Found");
+              } else {
+                rows.push(...parsed);
+                count += parsed.length;
+              }
+            } else {
+              // Not the last chunk, can't have UUID
+              rows.push(...parsed);
+              count += parsed.length;
+            }
+          });
+        } catch (e) {
+          console.log("Error in parsing: " + e + "->" + arr);
+        }
+
+        try {
+          if (rows.length > 0) {
+            setFileData((oldData) => [...oldData, ...rows]);
+            //console.log(fileData);
+          }
+          flag = true;
+        } catch (e) {
+          console.log("Error in table view: " + e + " '" + result + "'");
+        }
+        // Clear result for next chunks accumulation
+        result = "";
+        return readStream();
+      };
+      await readStream();
+      console.log("Finished reading stream, total rows: " + count.toString());
+      if (flag) {
+        // Now send the instruction for getting regex
         setPattern(pattern);
         setErrorAlert(null);
-        setID(response.id);
+        //setID(response.id);
         // So now we can process the pattern
         const requestRegex = await fetch("http://localhost:8000/getregex/", {
           method: "POST",
@@ -66,11 +122,11 @@ const Form = () => {
           setreplacement("");
         }
       } else {
-        setErrorAlert(response.error);
+        setErrorAlert(uploadRequest.error);
         setFileData([]);
       }
     } catch (error) {
-      setErrorAlert("An error occurred. Please try again.");
+      setErrorAlert("An error occurred. Please try again. (" + error + ")");
     } finally {
       setLoading(false);
     }
@@ -86,11 +142,13 @@ const Form = () => {
             type="file"
             className="form-control"
             id="file"
+            name="file"
             onChange={handleFileChange}
             accept=".csv, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             required
           />
         </div>
+        {/* {progress > 0 && progress != 100 && <ProgressBar progress={progress} />} */}
         <div className="mb-3">
           <label htmlFor="pattern" className="form-label">
             Instruction in Natural Language
