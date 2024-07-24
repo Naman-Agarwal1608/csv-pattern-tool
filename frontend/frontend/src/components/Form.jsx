@@ -116,8 +116,12 @@ const Form = () => {
           setregex(responseRegex.regex);
           setreplacement(responseRegex.replacement);
           setShowPatternForm(true);
-        } else {
+        } else if (responseRegex.error) {
           setErrorAlert(responseRegex.error);
+          setregex("");
+          setreplacement("");
+        } else {
+          setErrorAlert("Error in connecting with LLM, try again later :(");
           setregex("");
           setreplacement("");
         }
@@ -170,7 +174,11 @@ const Form = () => {
       {loading && <Loading />}
       {errorAlert && <ErrorAlert error={errorAlert} />}
       {fileData.length > 0 && (
-        <TableView str={"Before Replacement"} data={fileData} />
+        <TableView
+          str={"Before Replacement"}
+          data={fileData}
+          download={false}
+        />
       )}
       {showPatternForm && (
         <PatternForm

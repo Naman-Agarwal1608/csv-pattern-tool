@@ -6,7 +6,7 @@ import re
 import json
 
 
-CHUNKSIZE = 100  # Number of rows in go
+CHUNKSIZE = 5  # Number of rows in go
 
 
 def addCSV(request):
@@ -19,10 +19,8 @@ def addCSV(request):
 
             if file.name.endswith('.csv'):
                 reader = pd.read_csv(file, chunksize=CHUNKSIZE)
-                # df = pd.read_csv(file, low_memory=False)
             elif file.name.endswith('.xlsx') or file.name.endswith('.xls'):
                 reader = pd.read_excel(file, chunksize=CHUNKSIZE)
-                # df = pd.read_excel(file, low_memory=False)
             else:
                 return JsonResponse({'error': 'Invalid file format'})
             saveFile = receivedFile.objects.create(file=file)
@@ -52,20 +50,44 @@ def addCSV(request):
 
 def getRegex(request):
     if request.method == 'POST':
-        pattern = request.POST.get('pattern')
+        try:
+            pattern = request.POST.get('pattern')
+            regexllm_instance = RegexLLM()
 
-        # Not working don't know why
-        # if 'class_instance' not in request.session:
-        #     regexllm_instance = RegexLLM()
-        #     request.session['class_instance'] = RegexLLM()
-        #     request.session.modified = True
+            result = regexllm_instance.invokeLLM(pattern)
+            return JsonResponse(result, safe=False)
+        except Exception as e:
+            return JsonResponse({'error': str(e)})
+    else:
+        return JsonResponse({'error': 'Invalid request'})
 
-        # else:
-        #     regexllm_instance = request.session['class_instance']
-        regexllm_instance = RegexLLM()
 
-        result = regexllm_instance.invokeLLM(pattern)
-        return JsonResponse(result, safe=False)
+def getDesc(request):
+    if request.method == 'POST':
+        try:
+            uuid = request.POST.get('uuid')
+            regexllm_instance = RegexLLM(task="desc", id=uuid)
+
+            result = regexllm_instance.invokeLLM()
+            return JsonResponse(result, safe=False)
+        except Exception as e:
+            return JsonResponse({'error': str(e)})
+    else:
+        return JsonResponse({'error': 'Invalid request'})
+
+
+def getDummyData(request):
+    if request.method == 'POST':
+        try:
+            uuid = request.POST.get('uuid')
+            regexllm_instance = RegexLLM(task="dummy", id=uuid)
+
+            result = regexllm_instance.invokeLLM()
+            return JsonResponse(result, safe=False)
+        except Exception as e:
+            return JsonResponse({'error': str(e)})
+    else:
+        return JsonResponse({'error': 'Invalid request'})
 
 
 def replace(request):

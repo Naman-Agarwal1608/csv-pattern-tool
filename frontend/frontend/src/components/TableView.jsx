@@ -1,9 +1,12 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
+import { ExcelExportModule } from "@ag-grid-enterprise/excel-export";
 
-const TableView = ({ data, str }) => {
+const TableView = ({ data, str, download }) => {
+  const gridRef = useRef(null);
+
   if (!data || data.length === 0) {
     return null;
   }
@@ -18,11 +21,23 @@ const TableView = ({ data, str }) => {
     }));
   }, [data]);
 
+  const onGridReady = (params) => {
+    gridRef.current = params.api;
+  };
+
+  const dlCSV = () => {
+    gridRef.current.exportDataAsCsv();
+  };
+
+  const dlExcel = () => {
+    gridRef.current.exportDataAsExcel();
+  };
+
   return (
     <div className="my-3" style={{ height: "500px", width: "100%" }}>
       <h4 className="mb-2">Table Data [{str}]:</h4>
       <div
-        style={{ height: "90%", width: "100%" }}
+        style={{ height: "80%", width: "100%" }}
         //className="virtualizedTable"
         className="ag-theme-quartz"
       >
@@ -37,10 +52,22 @@ const TableView = ({ data, str }) => {
           }}
           domLayout="normal"
           pagination={true}
-          paginationPageSize={15}
+          paginationPageSize={10}
           rowBuffer={10}
+          onGridReady={onGridReady}
+          modules={[ExcelExportModule]}
         />
       </div>
+      {download && (
+        <div className="my-2">
+          <button className="btn btn-success btn-sm" onClick={dlCSV}>
+            Download as CSV
+          </button>
+          <button className="btn btn-success btn-sm mx-2" onClick={dlExcel}>
+            Download as Excel
+          </button>
+        </div>
+      )}
     </div>
   );
 };

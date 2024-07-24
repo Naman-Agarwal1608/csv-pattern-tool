@@ -2,6 +2,7 @@ import React from "react";
 import { useState } from "react";
 import ErrorAlert from "./ErrorAlert";
 import TableView from "./TableView";
+import ExtraInfo from "./ExtraInfo";
 
 const PatternForm = ({ regex, replace, pattern, id }) => {
   const [finalregex, setRegex] = useState(regex);
@@ -11,6 +12,7 @@ const PatternForm = ({ regex, replace, pattern, id }) => {
   const [loading, setLoading] = useState(false);
   const [confirmloading, setconfirmLoading] = useState(false);
   const [fileData, setFileData] = useState([]);
+  const [showExtraInfo, setShowExtraInfo] = useState(false);
 
   const handleRegexChange = (e) => {
     setRegex(e.target.value);
@@ -60,6 +62,7 @@ const PatternForm = ({ regex, replace, pattern, id }) => {
     setconfirmLoading(true);
     setErrorAlert(null);
     setFileData([]);
+    setShowExtraInfo(false);
     const formData = new FormData();
     formData.append("regex", finalregex);
     formData.append("replacement", replacement);
@@ -103,6 +106,7 @@ const PatternForm = ({ regex, replace, pattern, id }) => {
       setErrorAlert("Error: " + error);
     } finally {
       setconfirmLoading(false);
+      setShowExtraInfo(true);
     }
   };
 
@@ -160,8 +164,9 @@ const PatternForm = ({ regex, replace, pattern, id }) => {
         </button>
       </div>
       {fileData.length > 0 && (
-        <TableView str={"After Replacement"} data={fileData} />
+        <TableView str={"After Replacement"} data={fileData} download={true} />
       )}
+      {showExtraInfo && <ExtraInfo uuid={id} />}
     </div>
   );
 };

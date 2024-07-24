@@ -1,30 +1,23 @@
-from typing import Union
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.pydantic_v1 import BaseModel, Field
+
+from .models import receivedFile
+import pandas as pd
+
 import json
 import re
 
+CHUNKSIZE = 10000  # Number of rows in go
 
-class normalResponse(BaseModel):
-    regex: str = Field(
-        description="The regex pattern to find the specific pattern")
-    replacement: str = Field(
-        description="The replacement text to replace the specific pattern")
-
-
-class errorResponse(BaseModel):
-    error: str = Field(description="Error message")
-
-
-class Response(BaseModel):
-    output: Union[normalResponse, errorResponse]
+# Number of rows to sample from each chunk, 10% of the chunksize
+SAMPLE_CHUNKSIZE = int(CHUNKSIZE * 0.1)
 
 
 class RegexLLM:
 
-    prompt = """You are a chatbot assistant. Your task is to analyze a natural language instruction.
+    regex_prompt = """
+        You are a chatbot assistant. Your task is to analyze a natural language instruction.
         The instruction is a sentence that instrcuts to find a specific pattern and then replace it with
         some other text. You need to generate a regex pattern that can be used to find the specific pattern
         and also to find the replacement text. Then you need to return the response in a JSON formatted
@@ -45,28 +38,93 @@ class RegexLLM:
         The instrcution is: {instruction}
     """
 
-    def __init__(self):
+    desc_prompt = """
+        You are a chatbot assistant. Your task is to analyse the given data and generat a comprehensive
+        and detailed description of the data. Remember the data included is not complete it is just a sample
+        data. You need to generate a description of the data in a JSON formatted string with keys:
+        {{ "description": "description of the data here" }}
+        and if you can't generate the description, you need to return the error in the JSON formatted
+        string stating the error message:
+        {{ "error": "error message here" }}
 
-        prompt_template = PromptTemplate(
-            template=self.prompt,
-            input_variables=["instruction"],
-        )
+        Remember the data will be given in JSON just because it is easy to parse and read. You need to
+        assume that the user had provided the data as a CSV or excel file, so just be specific and talk about
+        data only.
+
+        The data in the JSON format is: {data} 
+    """
+
+    dummyData_prompt = """
+        You are a chatbot assistant. Your task is to generate a dummy data based on the given data.
+        You need to generate a dummy data in a JSON formatted string/list with keys:
+        [{{ "column_1": "value here", "column_2": "value here", ... }}, ...]
+
+        Remember this data is not complete and just a sample data, so don't make any statistical analysis and
+        assumptions about the data. Just generate a simple dummy data based on the given data. The data should
+        be in the same format as the given data and also of 10 rows. Also make sure that data looks realistic.
+
+        The data in the JSON format is: {data}
+    """
+
+    def __init__(self, task="regex", id=None):
+        """
+        task: str
+            The task to perform by the LLM. Default is 'regex'.
+            Other tasks are 'desc' and 'dummy'.
+        id: str
+            The id of the file to perform the task on. Default is None.
+        """
+
+        if task == "regex":
+            prompt_template = PromptTemplate(
+                template=self.regex_prompt,
+                input_variables=["instruction"],
+            )
+        elif id:
+            file = receivedFile.objects.get(uuid=id).file
+            self.sample_data = []
+            if file.name.endswith('.csv'):
+                reader = pd.read_csv(file, chunksize=CHUNKSIZE)
+            elif file.name.endswith('.xlsx') or file.name.endswith('.xls'):
+                reader = pd.read_excel(file, chunksize=CHUNKSIZE)
+
+            # Due to limitation of credits, only 20 rows of data would be passed
+            # as sample data
+
+            for chunk in reader:
+                # self.sample_data.append(chunk.sample(
+                #     min(SAMPLE_CHUNKSIZE, len(chunk))).to_json(orient='records'))
+                self.sample_data.append(chunk)
+
+            df = pd.concat(self.sample_data)
+            self.sample_data = df.sample(min(20, len(df))).to_json(
+                orient='records')  # 20 because of limited credits
+
+            if task == "dummy":
+                prompt_template = PromptTemplate(
+                    template=self.dummyData_prompt,
+                    input_variables=["data"],
+                )
+            elif task == "desc":
+                prompt_template = PromptTemplate(
+                    template=self.desc_prompt,
+                    input_variables=["data"],
+                )
+        else:
+            raise ValueError("Invalid task or id")
 
         output_parser = StrOutputParser()
         model = ChatOpenAI(model="gpt-4-turbo", temperature=0.0)
 
         self.chain = prompt_template | model | output_parser
 
-    def invokeLLM(self, instruction):
-        response = self.chain.invoke(instruction)
+    def invokeLLM(self, instruction=None):
+        if instruction:
+            response = self.chain.invoke(instruction)
+        else:
+            response = self.chain.invoke(self.sample_data)
         clean_response = response.strip('```json').strip().replace('\n', '')
         data = json.loads(clean_response)
-        # regex = re.compile(data.get('regex'))
-        # dict = {
-        #     "regex": regex.pattern,
-        #     "replacement": data.get('replacement')
-        # }
-        # print(dict)
         return data
 
 

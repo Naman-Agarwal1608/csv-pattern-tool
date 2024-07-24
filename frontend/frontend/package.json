@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ag-grid-enterprise/excel-export": "^32.0.2",
     "ag-grid-community": "^32.0.2",
     "ag-grid-react": "^32.0.2",
     "bootstrap": "^5.3.3",
