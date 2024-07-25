@@ -52,7 +52,8 @@ const TableView = ({ data, str, download }) => {
           }}
           domLayout="normal"
           pagination={true}
-          paginationPageSize={[10, 25, 50, 100]}
+          paginationPageSize={10}
+          paginationPageSizeSelector={[10, 25, 50, 100]}
           rowBuffer={10}
           onGridReady={onGridReady}
           modules={[ExcelExportModule]}
