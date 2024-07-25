@@ -86,7 +86,10 @@ class RegexLLM:
             if file.name.endswith('.csv'):
                 reader = pd.read_csv(file, chunksize=CHUNKSIZE)
             elif file.name.endswith('.xlsx') or file.name.endswith('.xls'):
-                reader = pd.read_excel(file, chunksize=CHUNKSIZE)
+                df = pd.read_excel(file, engine='openpyxl')
+                # Process the DataFrame in chunks
+                reader = (df.iloc[i:i + CHUNKSIZE]
+                          for i in range(0, df.shape[0], CHUNKSIZE))
 
             # Due to limitation of credits, only 20 rows of data would be passed
             # as sample data

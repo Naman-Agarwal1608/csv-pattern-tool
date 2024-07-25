@@ -18,7 +18,11 @@ def addCSV(request):
             if file.name.endswith('.csv'):
                 reader = pd.read_csv(file, chunksize=CHUNKSIZE)
             elif file.name.endswith('.xlsx') or file.name.endswith('.xls'):
-                reader = pd.read_excel(file, chunksize=CHUNKSIZE)
+                # reader = pd.read_excel(file, chunksize=CHUNKSIZE)
+                df = pd.read_excel(file, engine='openpyxl')
+                # Process the DataFrame in chunks
+                reader = (df.iloc[i:i + CHUNKSIZE]
+                          for i in range(0, df.shape[0], CHUNKSIZE))
             else:
                 return JsonResponse({'error': 'Invalid file format'})
             saveFile = receivedFile.objects.create(file=file)
@@ -97,7 +101,10 @@ def replace(request):
             if file.name.endswith('.csv'):
                 reader = pd.read_csv(file, chunksize=CHUNKSIZE)
             elif file.name.endswith('.xlsx') or file.name.endswith('.xls'):
-                reader = pd.read_excel(file, chunksize=CHUNKSIZE)
+                df = pd.read_excel(file, engine='openpyxl')
+                # Process the DataFrame in chunks
+                reader = (df.iloc[i:i + CHUNKSIZE]
+                          for i in range(0, df.shape[0], CHUNKSIZE))
 
             def regexReplace(reader):
                 for chunk in reader:
