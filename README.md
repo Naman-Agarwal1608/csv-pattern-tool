@@ -16,13 +16,17 @@ The backend of this application is built using Django, a high-level Python web f
 - Data Description and Dummy (Synthetic) Data: Leveraging LLMs, users can generate a short description of uploaded data along with a dummy data, that can be used for training or testing.
 - Export Data: Export the modified and synthetic data as CSV or Excel files.
 
-## Installation:
-1. To run the application locally, follow these additional steps:
+
+### Running Locally:
+
+To run the application locally, follow these steps:
+
+Remember to have your openai API key setup as "OPENAI_API_KEY" in system.
 
 Frontend:
 1. Navigate to the frontend directory: `cd frontend`
 2. Install the required dependencies: `npm install`
-3. Start the frontend development server: `npm start`
+3. Start the frontend development server: `npm run dev`
 
 Backend:
 1. Navigate to the backend directory: `cd backend`
@@ -34,12 +38,22 @@ Backend:
 5. Set up the database: `python manage.py migrate`
 6. Start the backend development server: `python manage.py runserver`
 
-Now you can access the application in your web browser at `http://localhost:3000` and interact with both the frontend and backend components.
+Now you can access the application in your web browser at `http://localhost:5173` (default port) and interact with both the frontend and backend components.
+
+### Using Docker Compose:
+
+To run the application using Docker Compose, follow these steps:
+
+1. Make sure you have Docker and Docker Compose installed on your machine.
+2. Create a `.env` file in the root directory of the project and add your API key as `OPENAI_API_KEY=your_api_key`.
+3. Run the following command to start the application: `docker-compose up`
+
+Now you can access the application in your web browser at `http://localhost:5173` and interact with the application.
 
 ## Usage:
-1. Access the application in your web browser at `http://localhost:8000`
-2. Upload a CSV / Excel file as well as a natural language instruction to find a pattern and replace it with some value.
-3. Review the upladed data and identified patterns and choose to replace them if desired.
+1. Access the application in your web browser at `http://localhost:5173`
+2. Upload a CSV / Excel file as well as input a natural language instruction to find a pattern and replace it with some value.
+3. Review the uploaded data and identified patterns and choose to replace them if desired.
 4. Download the modified file with replaced patterns.
 5. [Optional] Generate data description and synthetic data using LLM.
 
