@@ -56,48 +56,101 @@ const Form = () => {
           return;
         }
         //console.log(value);
-        result = decoder.decode(value, { stream: true });
-        temp = result.replaceAll("}][{", "}]||[{");
-        arr = temp.split("||");
+        result += decoder.decode(value, { stream: true });
+        if (result.endsWith("}]")) {
+          //If result ends with "}]", then the chunk received is complete
+          //and can be processed
 
-        let rows = [];
-        try {
-          arr.forEach((element, index) => {
-            let parsed = "";
-            parsed = JSON.parse(element);
+          //If chunks are small and are concatenated
+          temp = result.replaceAll("}][{", "}]||[{");
+          arr = temp.split("||");
 
-            if (index === arr.length - 1) {
-              // Last element (chunk) of array can contain UUID
-              if (parsed[parsed.length - 1].uuid) {
-                setID(parsed[parsed.length - 1].uuid);
-                //console.log("UUID: " + "Found");
+          let rows = [];
+          try {
+            arr.forEach((element, index) => {
+              let parsed = "";
+              parsed = JSON.parse(element);
+
+              if (index === arr.length - 1) {
+                // Last element (chunk) of array can contain UUID
+                if (parsed[parsed.length - 1].uuid) {
+                  setID(parsed[parsed.length - 1].uuid);
+                  //console.log("UUID: " + "Found");
+                } else {
+                  rows.push(...parsed);
+                  count += parsed.length;
+                }
               } else {
+                // Not the last chunk, can't have UUID
                 rows.push(...parsed);
                 count += parsed.length;
               }
-            } else {
-              // Not the last chunk, can't have UUID
-              rows.push(...parsed);
-              count += parsed.length;
-            }
-          });
-        } catch (e) {
-          console.log("Error in parsing: " + e + "->" + arr);
-        }
-
-        try {
-          if (rows.length > 0) {
-            setFileData((oldData) => [...oldData, ...rows]);
-            //console.log(fileData);
+            });
+          } catch (e) {
+            console.log("Error in parsing: " + e + "->" + arr);
           }
-          flag = true;
-        } catch (e) {
-          console.log("Error in table view: " + e + " '" + result + "'");
+
+          try {
+            if (rows.length > 0) {
+              setFileData((oldData) => [...oldData, ...rows]);
+              //console.log(fileData);
+            }
+            flag = true;
+          } catch (e) {
+            console.log("Error in table view: " + e + " '" + result + "'");
+          }
+          result = ""; //Chunks processed, clear result for next chunks accumulation
         }
-        // Clear result for next chunks accumulation
-        result = "";
         return readStream();
       };
+
+      // Only works while parsing one row at a time
+      // const readStream = async () => {
+      //   while (true) {
+      //     const { done, value } = await reader.read();
+      //     if (done) break;
+
+      //     buffer += decoder.decode(value, { stream: true });
+
+      //     // Split buffer into possible JSON objects
+      //     let lines = buffer.split("\n");
+
+      //     // Process all lines except the last one, which may be incomplete
+      //     for (let i = 0; i < lines.length - 1; i++) {
+      //       if (lines[i].trim() !== "") {
+      //         try {
+      //           let parsed = JSON.parse(lines[i]);
+      //           if (parsed.uuid) {
+      //             setID(parsed.uuid);
+      //           } else {
+      //             setFileData((prevData) => [...prevData, parsed]);
+      //             count += 1;
+      //           }
+      //         } catch (e) {
+      //           console.log("Error in parsing line: " + e);
+      //         }
+      //       }
+      //     }
+
+      //     // The last line may be incomplete, keep it in the buffer
+      //     buffer = lines[lines.length - 1];
+      //   }
+      //   // Process any remaining buffer content
+      //   if (buffer.length > 0 && buffer.trim() !== "") {
+      //     try {
+      //       let parsed = JSON.parse(buffer);
+      //       if (parsed.uuid) {
+      //         setID(parsed.uuid);
+      //       } else {
+      //         setFileData((prevData) => [...prevData, parsed]);
+      //         count += 1;
+      //       }
+      //     } catch (e) {
+      //       console.log("Error in final parsing: " + e);
+      //     }
+      //   }
+      // };
+
       await readStream();
       console.log("Finished reading stream, total rows: " + count.toString());
       if (flag) {
@@ -135,6 +188,7 @@ const Form = () => {
       setLoading(false);
     }
   };
+
   return (
     <div className="container">
       <form onSubmit={handleSubmit}>

@@ -6,7 +6,7 @@ import re
 import json
 
 
-CHUNKSIZE = 5  # Number of rows in go
+CHUNKSIZE = 500  # Number of rows in go
 
 
 def addCSV(request):
@@ -14,8 +14,6 @@ def addCSV(request):
         file = request.FILES['file']
 
         try:
-
-            chunks = []
 
             if file.name.endswith('.csv'):
                 reader = pd.read_csv(file, chunksize=CHUNKSIZE)
@@ -28,7 +26,6 @@ def addCSV(request):
             def data_yielder():
 
                 for chunk in reader:
-                    chunks.append(chunk)
                     yield chunk.to_json(orient='records')
                 yield json.dumps([{"uuid": str(saveFile.uuid)}])
 

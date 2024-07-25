@@ -85,22 +85,58 @@ const PatternForm = ({ regex, replace, pattern, id }) => {
         if (done) {
           return;
         }
-        //console.log(value);
-        result = decoder.decode(value, { stream: true });
-        temp = result.replaceAll("}][{", "}]||[{");
-        arr = temp.split("||");
+        result += decoder.decode(value, { stream: true });
+        if (result.endsWith("}]")) {
+          //If result ends with "}]", then the chunk received is complete
+          //and can be processed
 
-        let rows = [];
-        arr.forEach((element) => {
-          let parsed = JSON.parse(element);
-          rows.push(...parsed);
-        });
+          //If chunks are small and are concatenated
+          temp = result.replaceAll("}][{", "}]||[{");
+          arr = temp.split("||");
 
-        setFileData((oldData) => [...oldData, ...rows]);
-        // Clear result for next chunks accumulation
-        result = "";
+          let rows = [];
+          try {
+            arr.forEach((element) => {
+              let parsed = JSON.parse(element);
+              rows.push(...parsed);
+            });
+          } catch (e) {
+            console.log("Error in parsing: " + e + "->" + arr);
+          }
+
+          try {
+            if (rows.length > 0) {
+              setFileData((oldData) => [...oldData, ...rows]);
+            }
+          } catch (e) {
+            console.log("Error in table view: " + e + " '" + result + "'");
+          }
+          result = ""; //Chunks processed, clear result for next chunks accumulation
+        }
         return readStream();
       };
+
+      // const readStream = async () => {
+      //   const { done, value } = await reader.read();
+      //   if (done) {
+      //     return;
+      //   }
+      //   //console.log(value);
+      //   result = decoder.decode(value, { stream: true });
+      //   temp = result.replaceAll("}][{", "}]||[{");
+      //   arr = temp.split("||");
+
+      //   let rows = [];
+      //   arr.forEach((element) => {
+      //     let parsed = JSON.parse(element);
+      //     rows.push(...parsed);
+      //   });
+
+      //   setFileData((oldData) => [...oldData, ...rows]);
+      //   // Clear result for next chunks accumulation
+      //   result = "";
+      //   return readStream();
+      // };
       await readStream();
     } catch (error) {
       setErrorAlert("Error: " + error);

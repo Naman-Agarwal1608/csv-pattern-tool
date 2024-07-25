@@ -61,7 +61,7 @@ class RegexLLM:
 
         Remember this data is not complete and just a sample data, so don't make any statistical analysis and
         assumptions about the data. Just generate a simple dummy data based on the given data. The data should
-        be in the same format as the given data and also of 10 rows. Also make sure that data looks realistic.
+        be in the same format as the given data and also of just 10 rows. Also make sure that data looks realistic.
 
         The data in the JSON format is: {data}
     """
