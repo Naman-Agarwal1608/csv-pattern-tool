@@ -38,28 +38,28 @@ Backend:
 5. Set up the database: `python manage.py migrate`
 6. Start the backend development server: `python manage.py runserver`
 
-Now you can access the application in your web browser at `http://localhost:5173` (default port) and interact with both the frontend and backend components.
+Now you can access the application in your web browser at `http://localhost:5173` (default port) and interact with the front and backend components.
 
 ### Using Docker Compose:
 
 To run the application using Docker Compose, follow these steps:
 
-1. Make sure you have Docker and Docker Compose installed on your machine.
-2. Create a `.env` file in the root directory of the project and add your API key as `OPENAI_API_KEY=your_api_key`.
+1. Ensure you have Docker and Docker Compose installed on your machine.
+2. Create a `.env` file in the project's root directory and add your API key as `OPENAI_API_KEY=your_api_key`.
 3. Run the following command to start the application: `docker-compose up`
 
 Now you can access the application in your web browser at `http://localhost:5173` and interact with the application.
 
 ## Usage:
 1. Access the application in your web browser at `http://localhost:5173`
-2. Upload a CSV / Excel file as well as input a natural language instruction to find a pattern and replace it with some value.
+2. Upload a CSV / Excel file and input a natural language instruction to find a pattern and replace it with a value.
 3. Review the uploaded data and identified patterns and choose to replace them if desired.
 4. Download the modified file with replaced patterns.
 5. [Optional] Generate data description and synthetic data using LLM.
 
 ## Demo
 
-Coming soon...
+Demo Video Link: [Video Link](https://youtu.be/VVmrijknLwo)
 
 ## Contributing:
 Contributions are welcome! If you'd like to contribute to this project, please follow these steps:
