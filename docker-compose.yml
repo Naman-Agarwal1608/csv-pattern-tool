@@ -1,5 +1,5 @@
-version: '3.8'
-
+# Docker compose for starting the frontend and
+# backend services
 services:
   frontend:
       build:
