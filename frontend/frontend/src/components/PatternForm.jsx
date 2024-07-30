@@ -14,19 +14,35 @@ const PatternForm = ({ regex, replace, pattern, id }) => {
   const [fileData, setFileData] = useState([]);
   const [showExtraInfo, setShowExtraInfo] = useState(false);
 
-  const handleRegexChange = (e) => {
-    setRegex(e.target.value);
+  const handleRegexChange = (index, value) => {
+    const updatedRegexes = [...finalregex];
+    updatedRegexes[index] = value;
+    setRegex(updatedRegexes);
   };
 
-  const handleReplacementChange = (e) => {
-    setReplacement(e.target.value);
+  const handleReplacementChange = (index, value) => {
+    const updatedReplacements = [...replacement];
+    updatedReplacements[index] = value;
+    setReplacement(updatedReplacements);
+  };
+
+  const handleAddPattern = () => {
+    setRegex([...finalregex, ""]);
+    setReplacement([...replacement, ""]);
+  };
+
+  const handleRemovePattern = (index) => {
+    const updatedRegexes = finalregex.filter((_, i) => i !== index);
+    const updatedReplacements = replacement.filter((_, i) => i !== index);
+    setRegex(updatedRegexes);
+    setReplacement(updatedReplacements);
   };
 
   const handleRetry = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setRegex("Retrying...");
-    setReplacement("Retrying...");
+    setRegex(["Retrying..."]);
+    setReplacement(["Retrying..."]);
     setFileData([]);
 
     const formData = new FormData();
@@ -63,15 +79,22 @@ const PatternForm = ({ regex, replace, pattern, id }) => {
     setErrorAlert(null);
     setFileData([]);
     setShowExtraInfo(false);
-    const formData = new FormData();
-    formData.append("regex", finalregex);
-    formData.append("replacement", replacement);
-    formData.append("id", id);
+    // const formData = new FormData();
+    // formData.append("regex", finalregex);
+    // formData.append("replacement", replacement);
+    // formData.append("id", id);
 
     try {
       const request = await fetch("http://localhost:8000/replace/", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          regex: finalregex,
+          replacement: replacement,
+          id: id,
+        }),
       });
 
       const reader = request.body.getReader();
@@ -150,55 +173,76 @@ const PatternForm = ({ regex, replace, pattern, id }) => {
     <div className="my-3">
       <h4>Using LLM:</h4>
       {errorAlert && <ErrorAlert message={errorAlert} />}
-      <div className="input-group flex-nowrap">
-        <span className="input-group-text" id="addon-wrapping">
-          With Regex:
-        </span>
-        <input
-          type="text"
-          id="regex"
-          className="form-control"
-          placeholder="Regex Pattern"
-          onChange={handleRegexChange}
-          value={finalregex}
-          required
-        />
-        <span className="input-group-text" id="addon-wrapping">
-          replacing all values with:
-        </span>
-        <input
-          type="text"
-          className="form-control"
-          placeholder="replacement value"
-          onChange={handleReplacementChange}
-          value={replacement}
-          required
-        />
-
-        <button type="button" className="btn btn-danger" onClick={handleRetry}>
-          {loading && (
-            <span
-              className="spinner-border spinner-border-sm"
-              aria-hidden="true"
-            ></span>
-          )}{" "}
-          Retry
-        </button>
-        <button
-          type="button"
-          className="btn btn-success"
-          onClick={handleConfirm}
-          disabled={confirmButton}
-        >
-          {confirmloading && (
-            <span
-              className="spinner-border spinner-border-sm"
-              aria-hidden="true"
-            ></span>
-          )}{" "}
-          Confirm
-        </button>
-      </div>
+      {finalregex.map((item, index) => (
+        <div className="input-group flex-nowrap mb-2" key={index}>
+          <span className="input-group-text" id="addon-wrapping">
+            With Regex:
+          </span>
+          <input
+            type="text"
+            id="regex"
+            className="form-control"
+            placeholder="Regex Pattern"
+            onChange={(e) => handleRegexChange(index, e.target.value)}
+            value={item}
+            required
+          />
+          <span className="input-group-text" id="addon-wrapping">
+            replacing all values with:
+          </span>
+          <input
+            type="text"
+            className="form-control"
+            placeholder="replacement value"
+            onChange={(e) => handleReplacementChange(index, e.target.value)}
+            value={replacement[index]}
+            required
+          />
+          {index > 0 && (
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={() => handleRemovePattern(index)}
+            >
+              Remove
+            </button>
+          )}
+        </div>
+      ))}
+      <button
+        type="button"
+        className="btn btn-primary m-2"
+        onClick={handleAddPattern}
+      >
+        Add Pattern
+      </button>
+      <button
+        type="button"
+        className="btn btn-danger my-2"
+        onClick={handleRetry}
+      >
+        {loading && (
+          <span
+            className="spinner-border spinner-border-sm"
+            aria-hidden="true"
+          ></span>
+        )}{" "}
+        Retry
+      </button>
+      <button
+        type="button"
+        className="btn btn-success mx-2"
+        onClick={handleConfirm}
+        disabled={confirmButton}
+      >
+        {confirmloading && (
+          <span
+            className="spinner-border spinner-border-sm"
+            aria-hidden="true"
+          ></span>
+        )}{" "}
+        Confirm
+      </button>
       {fileData.length > 0 && (
         <TableView str={"After Replacement"} data={fileData} download={true} />
       )}

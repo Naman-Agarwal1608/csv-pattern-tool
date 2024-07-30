@@ -19,15 +19,16 @@ class RegexLLM:
     regex_prompt = """
         You are a chatbot assistant. Your task is to analyze a natural language instruction.
         The instruction is a sentence that instrcuts to find a specific pattern and then replace it with
-        some other text. You need to generate a regex pattern that can be used to find the specific pattern
-        and also to find the replacement text. Then you need to return the response in a JSON formatted
+        some other text. The instruction can ask to find multiple patterns and replace them also. You
+        need to generate a regex pattern array that can be used to find the specific pattern
+        and also to find the replacement text array. Then you need to return the response in a JSON formatted
         string with keys:
         {{
-            "regex": "regex pattern as a string",
-            "replacement": "replacement text here"
+            "regex": ["regex pattern as a string",...],
+            "replacement": ["replacement text here",...]
         }}
-        and if you can't find any pattern or replacement, you need to return the error in the JSON
-        formatted string stating the error message:
+        If you can't find replacement for any of the patterns or vice versa or no pattern if given, you need to return the error in the JSON formatted
+        string stating the error message:
         {{
             "error": "error message here"
         }}

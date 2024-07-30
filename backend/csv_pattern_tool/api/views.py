@@ -20,6 +20,7 @@ def addCSV(request):
             elif file.name.endswith('.xlsx') or file.name.endswith('.xls'):
                 # reader = pd.read_excel(file, chunksize=CHUNKSIZE)
                 df = pd.read_excel(file, engine='openpyxl')
+
                 # Process the DataFrame in chunks
                 reader = (df.iloc[i:i + CHUNKSIZE]
                           for i in range(0, df.shape[0], CHUNKSIZE))
@@ -93,9 +94,11 @@ def getDummyData(request):
 
 def replace(request):
     if request.method == 'POST':
-        regexStr = request.POST.get('regex')
-        replacement = request.POST.get('replacement')
-        file_id = request.POST.get('id')
+        data = json.loads(request.body)
+        regexLst = data.get('regex')
+        replacementLst = data.get('replacement')
+        file_id = data.get('id')
+
         try:
             file = receivedFile.objects.get(uuid=file_id).file
             if file.name.endswith('.csv'):
@@ -108,9 +111,10 @@ def replace(request):
 
             def regexReplace(reader):
                 for chunk in reader:
-                    tempChunk = chunk.map(
-                        lambda x: re.sub(regexStr, replacement, str(x)))
-                    yield tempChunk.to_json(orient='records')
+                    for (regex, replacement) in zip(regexLst, replacementLst):
+                        chunk = chunk.map(
+                            lambda x: re.sub(regex, replacement, str(x)))
+                    yield chunk.to_json(orient='records')
 
             response = StreamingHttpResponse(
                 regexReplace(reader), content_type='application/json')

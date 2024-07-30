@@ -165,6 +165,7 @@ const Form = () => {
         });
 
         const responseRegex = await requestRegex.json();
+        console.log(responseRegex);
         if (responseRegex.regex) {
           setregex(responseRegex.regex);
           setreplacement(responseRegex.replacement);
